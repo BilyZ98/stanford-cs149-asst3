@@ -22,7 +22,8 @@ endif
 
 OBJDIR=objs
 CXXFLAGS=-O3 -Wall
-LDFLAGS=-L/usr/local/cuda/lib64/ -lcudart
+LDFLAGS=-L/GPUFS/app_GPU/compiler/CUDA/11.2.0/lib64/  -lcudart -lcuda
+# /usr/local/cuda/lib64/
 NVCC=nvcc
 NVCCFLAGS=-O3 -m64
 
