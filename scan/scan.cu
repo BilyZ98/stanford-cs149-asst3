@@ -91,46 +91,52 @@ void exclusive_scan(int* input, int N, int* result)
     // to CUDA kernel functions (that you must write) to implement the
     // scan.
   const int threadsPerBlock = 128;
+  int new_N = nextPow2(N);
+  cudaMemset(result+N, 0, (new_N-N)*sizeof(int));
+  
 
-  const int blocks = (N + threadsPerBlock -1)/ threadsPerBlock;
-  int *arr = (int*)malloc(N * sizeof(int));
-  cudaMemcpy(arr, input, N * sizeof(int), cudaMemcpyDeviceToHost);
-  for(int i=0; i < N ;i ++) {
-    printf("%d:%d ", i, arr[i]);
-  }
-  printf("\n");
+  const int blocks = (new_N + threadsPerBlock -1)/ threadsPerBlock;
+  // int *arr = (int*)malloc(N * sizeof(int));
+  // cudaMemcpy(arr, input, N * sizeof(int), cudaMemcpyDeviceToHost);
+  // printf("input arr\n");
+  // for(int i=0; i < N ;i ++) {
+  //   printf("%d:%d ", i, arr[i]);
+  // }
+  // printf("\n");
 
 
-  for(int two_d=1; two_d < N /2; two_d*=2) {
+  for(int two_d=1; two_d < new_N /2; two_d*=2) {
     int two_dplus1 = 2 * two_d;
 
-    cudaDeviceSynchronize();
       //double startTime = CycleTimer::currentSeconds();
-  scan_upsweep_kernel<<<blocks, threadsPerBlock>>>(N, two_d, two_dplus1, result);
+  scan_upsweep_kernel<<<blocks, threadsPerBlock>>>(new_N, two_d, two_dplus1, result);
+    cudaDeviceSynchronize();
       //double endTime = CycleTimer::currentSeconds();
 
   }
-  cudaMemcpy(arr, result, N*sizeof(int), cudaMemcpyDeviceToHost);
-  for(int i=0; i < N ;i ++) {
-    printf("%d:%d ", i, arr[i]);
-  }
-  printf("\n");
+  // cudaMemcpy(arr, result, N*sizeof(int), cudaMemcpyDeviceToHost);
+  // printf("upsweep cuda\n");
+  // for(int i=0; i < N ;i ++) {
+  //   printf("%d:%d ", i, arr[i]);
+  // }
+  // printf("\n");
 
 
-    cudaMemset(result + N-1, 0, sizeof(int));
+    cudaMemset(result + new_N-1, 0, sizeof(int));
 
-  for(int two_d=N/2; two_d >= 1; two_d/=2) {
+  for(int two_d=new_N/2; two_d >= 1; two_d/=2) {
     int two_dplus1 = 2 * two_d;
+  scan_downsweep_kernel<<<blocks, threadsPerBlock>>>(new_N, two_d, two_dplus1, result);
     cudaDeviceSynchronize();
-  scan_downsweep_kernel<<<blocks, threadsPerBlock>>>(N, two_d, two_dplus1, result);
   }
-  cudaDeviceSynchronize();
-  cudaMemcpy(arr, result, N * sizeof(int), cudaMemcpyDeviceToHost);
-  for(int i=0; i < N ;i ++) {
-    printf("%d:%d ", i, arr[i]);
-  }
-  printf("\n");
-  free(arr);
+  // cudaDeviceSynchronize();
+  // cudaMemcpy(arr, result, N * sizeof(int), cudaMemcpyDeviceToHost);
+  // printf("downsweep cuda\n");
+  // for(int i=0; i < N ;i ++) {
+  //   printf("%d:%d ", i, arr[i]);
+  // }
+  // printf("\n");
+  // free(arr);
 
 }
 

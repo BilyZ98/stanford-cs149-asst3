@@ -42,11 +42,11 @@ void cpu_exclusive_scan(int* start, int* end, int* output) {
 	    output[i+twod1-1] = output[i+twod-1] + output[i+twod1-1];
         }
     }
-    printf("upsweep phase\n");
-    for(int i=0; i < N; i++) {
-      printf("%d:%d ", i, output[i]);
-    }
-    printf("\n");
+    // printf("upsweep phase\n");
+    // for(int i=0; i < N; i++) {
+    //   printf("%d:%d ", i, output[i]);
+    // }
+    // printf("\n");
 
     output[N-1] = 0;
 
@@ -59,11 +59,11 @@ void cpu_exclusive_scan(int* start, int* end, int* output) {
             output[i+twod1-1] = tmp + output[i+twod1-1];
         }
     }
-    printf("downsweep phase\n");
-    for(int i=0; i < N; i++) {
-      printf("%d:%d ", i, output[i]);
-    }
-    printf("\n");
+    // printf("downsweep phase\n");
+    // for(int i=0; i < N; i++) {
+    //   printf("%d:%d ", i, output[i]);
+    // }
+    // printf("\n");
 
 #else    
     int N = end - start;
@@ -71,11 +71,11 @@ void cpu_exclusive_scan(int* start, int* end, int* output) {
     for (int i = 1; i < N; i++) {
         output[i] = output[i-1] + start[i-1];
     }
-    printf("normal cpu scan\n");
-    for(int i=0; i < N; i++) {
-      printf("%d:%d ", i, output[i]);
-    }
-    printf("\n");
+    // printf("normal cpu scan\n");
+    // for(int i=0; i < N; i++) {
+    //   printf("%d:%d ", i, output[i]);
+    // }
+    // printf("\n");
 
 
 #endif
@@ -171,11 +171,11 @@ int main(int argc, char** argv) {
             if (useThrust) {
 
                 cudaTime = std::min(cudaTime, cudaScanThrust(inarray, inarray+N, resultarray));
-                printf("thrust\n");
-            for(int i=0; i < N; i++) {
-              printf("%d:%d ", i, resultarray[i]);
-            }
-            printf("\n");
+            //     printf("thrust\n");
+            // for(int i=0; i < N; i++) {
+            //   printf("%d:%d ", i, resultarray[i]);
+            // }
+            // printf("\n");
             }
             else
                 cudaTime = std::min(cudaTime, cudaScan(inarray, inarray+N, resultarray));
