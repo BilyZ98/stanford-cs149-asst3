@@ -26,6 +26,13 @@ static inline int nextPow2(int n) {
     n++;
     return n;
 }
+void print_arr(int* arr, int length) {
+for(int i=0; i < length; i++) {
+    printf("%d:%d ", i, arr[i]);
+  }
+  printf("\n");
+
+}
 
 __global__ void
 scan_upsweep_kernel(int N, int two_d, int two_dplus1,int* result) {
@@ -275,11 +282,19 @@ int find_repeats(int* device_input, int length, int* device_output) {
   const int threadsPerBlock = 512;
   const int blocks = (length + threadsPerBlock -1 ) / threadsPerBlock;
   int repeat_indices_count;
-
+  int *arr = (int*)malloc(length * sizeof(int));
+  // cudaMemcpy(arr, device_input, length*sizeof(int), cudaMemcpyDeviceToHost);
+  cudaDeviceSynchronize();
+  // printf("input arr2\n");
+  // print_arr(arr, length);
   flag_repeats_kernel<<<blocks, threadsPerBlock>>>(device_input, flags_arr, length);
-  exclusive_scan(flags_arr, length, flags_sum_arr);
+  // cudaMemcpy(arr, flags_arr, length*sizeof(int), cudaMemcpyDeviceToHost);
+  // printf("flags arr\n");
+  // print_arr(arr, length);
+  cudaScan(flags_arr, flags_arr+length, flags_sum_arr) ;
   flags_extract_indices<<<blocks, threadsPerBlock>>>(flags_sum_arr, device_output, length);
-  cudaMemcpy(&repeat_indices_count, flags_sum_arr+length-1, 1, cudaMemcpyDeviceToHost);
+  cudaMemcpy(&repeat_indices_count, flags_sum_arr+length-1, 1*sizeof(int), cudaMemcpyDeviceToHost);
+  free(arr);
 
   return repeat_indices_count; 
 
@@ -296,6 +311,8 @@ double cudaFindRepeats(int *input, int length, int *output, int *output_length) 
     int *device_output;
     int rounded_length = nextPow2(length);
     
+    // printf("input arr1\n");
+    // print_arr(input, length);  
     cudaMalloc((void **)&device_input, rounded_length * sizeof(int));
     cudaMalloc((void **)&device_output, rounded_length * sizeof(int));
     cudaMemcpy(device_input, input, length * sizeof(int), cudaMemcpyHostToDevice);
@@ -312,6 +329,9 @@ double cudaFindRepeats(int *input, int length, int *output, int *output_length) 
     *output_length = result;
     cudaMemcpy(output, device_output, length * sizeof(int), cudaMemcpyDeviceToHost);
 
+    // printf("output length:%d\n", *output_length);
+    // printf("output indices\n");
+    // print_arr(output, length);
     cudaFree(device_input);
     cudaFree(device_output);
 
