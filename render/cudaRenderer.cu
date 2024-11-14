@@ -40,6 +40,10 @@ struct GlobalConstants {
 // place to put read-only variables).
 __constant__ GlobalConstants cuConstRendererParams;
 
+#define THREADS_PER_BLOCK_X 32
+#define THREADS_PER_BLOCK_Y 32
+
+
 // read-only lookup tables used to quickly compute noise (needed by
 // advanceAnimation for the snowflake scene)
 __constant__ int    cuConstNoiseYPermutationTable[256];
@@ -427,6 +431,42 @@ __global__ void kernelRenderCircles() {
     }
 }
 
+__global__ void kernelRenderPixels() {
+  int pixel_X =  blockIdx.x * blockDim.x + threadIdx.x;
+  int pixel_Y = blockIdx.y * blockDim.y + threadIdx.y;
+
+
+  int width = cuConstRendererParams.imageWidth;
+  int height = cuConstRendererParams.imageHeight;
+
+  // float boxL = pixel_X -1;
+  // float boxR = pixel_X +1;
+  // float boxT = pixel_Y - 1;
+  // float boxB = pixel_Y + 1;
+
+
+  if (pixel_X >= width || pixel_Y >= height)
+      return;
+
+  float4* imgPtr = (float4*)(&cuConstRendererParams.imageData[4 * (pixel_Y * width + pixel_X)]);
+  int num_circles = cuConstRendererParams.numCircles ;
+
+  float invWidth = 1.f / width;
+  float invHeight = 1.f / height;
+
+  float2 pixelCenterNorm = make_float2(invWidth * (static_cast<float>(pixel_X) + 0.5f),
+                                       invHeight * (static_cast<float>(pixel_Y) + 0.5f));
+  for(int circle_index=0; circle_index< num_circles; circle_index++) {
+    int circle_index3 = 3 * circle_index;  
+
+    float3 p = *(float3*)(&cuConstRendererParams.position[circle_index3]);
+    // float  rad = cuConstRendererParams.radius[circle_index];
+    shadePixel(circle_index, pixelCenterNorm, p, imgPtr);
+
+  }
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -633,13 +673,23 @@ CudaRenderer::advanceAnimation() {
     cudaDeviceSynchronize();
 }
 
+// void
+// CudaRenderer::render() {
+
+//     // 256 threads per block is a healthy number
+//     dim3 blockDim(256, 1);
+//     dim3 gridDim((numCircles + blockDim.x - 1) / blockDim.x);
+
+//     kernelRenderCircles<<<gridDim, blockDim>>>();
+//     cudaDeviceSynchronize();
+// }
 void
 CudaRenderer::render() {
 
     // 256 threads per block is a healthy number
-    dim3 blockDim(256, 1);
-    dim3 gridDim((numCircles + blockDim.x - 1) / blockDim.x);
+    dim3 blockDim(THREADS_PER_BLOCK_X, THREADS_PER_BLOCK_Y);
+    dim3 gridDim((image->width+THREADS_PER_BLOCK_X-1)/THREADS_PER_BLOCK_X, (image->height + THREADS_PER_BLOCK_Y-1)/THREADS_PER_BLOCK_Y );
 
-    kernelRenderCircles<<<gridDim, blockDim>>>();
+    kernelRenderPixels<<<gridDim, blockDim>>>();
     cudaDeviceSynchronize();
 }

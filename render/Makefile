@@ -21,7 +21,7 @@ else
 endif
 
 OBJDIR=objs
-CXXFLAGS=-O3 -Wall -g
+CXXFLAGS=-O3 -Wall -g -I$(CONDA_PREFIX)/include
 HOSTNAME=$(shell hostname)
 
 LIBS       :=
@@ -32,10 +32,10 @@ LIBS += GL glut cudart
 
 ifneq ($(wildcard /opt/cuda-8.0/.*),)
 # Latedays
-LDFLAGS=-L/opt/cuda-8.0/lib64/ -lcudart
+LDFLAGS=-L/opt/cuda-8.0/lib64/ -L/GPUFS/app_GPU/compiler/CUDA/11.2.0/lib64/ -lcudart -L$(CONDA_PREFIX)/lib
 else
 # GHC
-LDFLAGS=-L/usr/local/cuda/lib64/ -lcudart
+LDFLAGS=-L/usr/local/cuda/lib64/ -L/GPUFS/app_GPU/compiler/CUDA/11.2.0/lib64/ -lcudart -L$(CONDA_PREFIX)/lib
 endif
 
 LDLIBS  := $(addprefix -l, $(LIBS))
